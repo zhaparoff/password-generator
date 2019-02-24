@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Simple Password Generator</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <script type="text/javascript">
+        var digitGroupChars = "0123456789";
+        var consonantGroupChars = "bcdfghjklmnpqrstvwxz";
+        var vowelGroupChars = "aeiouy";
+        var letterGroupChars = consonantGroupChars + vowelGroupChars;
+        var symbolGroupChars = "@#$()<>[]{}^&~+-*/%=\\?!_.,:;";
+
+
+        function onLoad() {
+            generateAsWord();
+            generateParameterized();
+        }
+
+
+        function generateAsWord() {
+            var length = document.getElementById("word-length").value;
+            var generator = function () {
+                return generatePasswordAsWord(length);
+            }
+
+            var count = document.getElementById("word-count").value;
+            var passwords = generatePasswordArray(count, generator);
+
+            var target = document.getElementById("word-container");
+            target.innerHTML = passwordsToHtmlList(passwords);
+        }
+
+        function generatePasswordAsWord(length) {
+            var s = generatePasswordCore(consonantGroupChars.toUpperCase());
+
+            for (var i = 1; i < length - 1; i++) {
+                var pattern = (i % 2 === 0) ? consonantGroupChars : vowelGroupChars;
+                s += generatePasswordCore(pattern);
+            }
+
+            s += generatePasswordCore(symbolGroupChars);
+
+            return s;
+        }
+
+
+        function generateParameterized() {
+            var locase = document.getElementById("lower-case-factor").value;
+            var upcase = document.getElementById("upper-case-factor").value;
+            var digits = document.getElementById("digits-factor").value;
+            var symbols = document.getElementById("symbols-factor").value;
+            var chars = getChars(locase, upcase, digits, symbols);
+
+            var length = document.getElementById("generic-length").value;
+
+            var generator = function () {
+                return generatePasswordCore(chars, length);
+            }
+
+            var count = document.getElementById("generic-count").value;
+            var passwords = generatePasswordArray(count, generator);
+
+            var target = document.getElementById("generic-container");
+            target.innerHTML = passwordsToHtmlList(passwords);
+        }
+
+        function getChars(locaseFactor, upcaseFactor, digitsFactor, symbolsFactor) {
+            if (locaseFactor === 0 && upcaseFactor === 0 && digitsFactor === 0 && symbolsFactor === 0) {
+                locaseFactor = 1;
+                upcaseFactor = 1;
+                digitsFactor = 1;
+                symbolsFactor = 1;
+            }
+
+            var maxFactor = Math.max(locaseFactor, upcaseFactor, digitsFactor, symbolsFactor);
+            var upcaseGroupChars = letterGroupChars.toUpperCase();
+
+            var result = [];
+
+            for (var i = 0; i < maxFactor; i++) {
+                if (i < digitsFactor) {
+                    result.push(digitGroupChars);
+                }
+
+                if (i < locaseFactor) {
+                    result.push(letterGroupChars);
+                }
+
+                if (i < symbolsFactor) {
+                    result.push(symbolGroupChars);
+                }
+
+                if (i < upcaseFactor) {
+                    result.push(upcaseGroupChars);
+                }
+            }
+
+            return result.join("");
+        }
+
+        function generatePasswordCore(chars, length) {
+            length = length || 1;
+
+            var array = new Uint16Array(length);
+            getCrypto().getRandomValues(array);
+
+            var res = "";
+            for (var i = 0; i < length; i++) {
+                var r = array[i] % chars.length;
+                res += chars.substring(r, r + 1);
+            }
+
+            return res
+                .replace("&", "&amp;")
+                .replace(">", "&gt;")
+                .replace("<", "&lt;");
+        }
+
+        function getCrypto() {
+            var cryptoObj = window.crypto || window.msCrypto;
+
+            if (cryptoObj == null) {
+                alert("Sorry, but your browser does not support cryptography API.");
+            }
+
+            return cryptoObj;
+        }
+
+
+        function generatePasswordArray(count, generator) {
+            var a = [];
+
+            for (var i = 0; i < count; i++) {
+                a.push(generator());
+            }
+
+            return a;
+        }
+
+        function passwordsToHtmlList(passwords) {
+            var result = "<ul>";
+
+            passwords.forEach(function (p) {
+                result += "<li><samp>" + p + "</samp></li>";
+            });
+
+            result += "</ul>";
+
+            return result;
+        }
+    </script>
+</head>
+
+<body onload="onLoad();">
+    <div class="container">
+        <nav class="navbar navbar-dark bg-dark">
+            <span class="navbar-brand h1">Password Generator</span>
+        </nav>
+        <div class="row">
+            <div class="col-md mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>As a word</h5>
+                        <small>
+                            Contains characters from 3 groups: upper case, lower case and symbols. Easy to remember, if
+                            contains up to 6 syllables (13 chars), but still hard to hack using dictionary, since it is
+                            not a real word.
+                        </small>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group row">
+                                <label for="word-length" class="col-form-label col">Length</label>
+                                <input id="word-length" name="word-length" class="form-control col" type="number"
+                                    min="5" max="20" step="1" defaultValue="10" value="10" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="word-count" class="col-form-label col">Count</label>
+                                <input id="word-count" name="word-count" class="form-control col" type="number" min="1"
+                                    max="20" step="1" defaultValue="5" value="5" required>
+                            </div>
+                            <button type="button" class="btn btn-outline-dark"
+                                onclick="generateAsWord();">Generate</button>
+                        </form>
+                        <hr />
+                        <div id="word-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Parameterized</h5>
+                        <small>
+                            You can tune up different char groups propotions using the multipliers below. Specifying
+                            the zero value will exclude corresponding group from the generation.
+                        </small>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group row">
+                                <label for="lower-case-factor" class="col-form-label col">Lower Case Factor</label>
+                                <input id="lower-case-factor" name="lower-case-factor" class="form-control col"
+                                    type="number" min="0" max="20" step="1" defaultValue="2" value="2" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="upper-case-factor" class="col-form-label col">Upper Case Factor</label>
+                                <input id="upper-case-factor" name="upper-case-factor" class="form-control col"
+                                    type="number" min="0" max="20" step="1" defaultValue="2" value="2" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="digits-factor" class="col-form-label col">Digits Factor</label>
+                                <input id="digits-factor" name="digits-factor" class="form-control col" type="number"
+                                    min="0" max="20" step="1" defaultValue="4" value="4" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="symbols-factor" class="col-form-label col">Symbols Factor</label>
+                                <input id="symbols-factor" name="symbols-factor" class="form-control col" type="number"
+                                    min="0" max="20" step="1" defaultValue="0" value="0" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="generic-length" class="col-form-label col">Length</label>
+                                <input id="generic-length" name="generic-length" class="form-control col" type="number"
+                                    min="5" max="100" step="1" defaultValue="10" value="10" required>
+                            </div>
+                            <div class="form-group row">
+                                <label for="generic-count" class="col-form-label col">Count</label>
+                                <input id="generic-count" name="generic-count" class="form-control col" type="number"
+                                    min="1" max="20" step="1" defaultValue="5" value="5" required>
+                            </div>
+                            <button type="button" class="btn btn-outline-dark"
+                                onclick="generateParameterized();">Generate</button>
+                        </form>
+                        <hr />
+                        <p id="generic-container"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
