@@ -2,7 +2,7 @@
 
 Just a simple web page, which can help you to generate a new password.
 
-Using Web Crypto API (https://developer.mozilla.org/en-US/docs/Web/API/Window/crypto) under the hood.
+Uses Web Crypto API (https://developer.mozilla.org/en-US/docs/Web/API/Window/crypto) under the hood.
 No external scripts, no counters and other suspicious stuff - just plain vanilla JS.
 The only dependency is Bootstrap CSS from official CDN to make the page a bit prettier.
 
